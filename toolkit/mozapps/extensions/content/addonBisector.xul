@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<!DOCTYPE dialog SYSTEM "chrome://mozapps/locale/extensions/addonBisector.dtd">
+
+<window xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:html="http://www.w3.org/1999/xhtml"
+        onload="init();"
+        >
+  <script type="application/javascript" src="chrome://mozapps/content/extensions/addonBisector.js"/>
+
+  <description>&blurb;</description>
+
+  <groupbox id="noongoing" hidden="true">
+    <caption label="&noongoing.cap;"/>
+    <description>&noongoing.desc;</description>
+    <button id="start" label="&start.label;" oncommand="start()"/>
+  </groupbox>
+
+  <groupbox id="ongoing" hidden="true">
+    <caption label="&ongoing.cap;"/>
+    <description>&ongoing.desc;</description>
+    <hbox>
+      <button id="bad"  label="&markbad.label;"  oncommand="mark(false)"/>
+      <button id="good" label="&markgood.label;" oncommand="mark(true)"/>
+    </hbox>
+  </groupbox>
+
+  <groupbox id="next" hidden="true">
+    <caption label="&next.cap;"/>
+    <button label="&next.label;" oncommand="cont()"/>
+  </groupbox>
+
+  <groupbox id="done" hidden="true">
+    <caption label="&done.cap;"/>
+    <description>&done.desc;</description>
+    <hbox>
+      <image id="bad-icon"/>
+      <label id="bad-name"/>
+    </hbox>
+    <button id="finish" label="&done.label;" oncommand="cont()"/>
+  </groupbox>
+
+  <groupbox id="stats" hidden="true" flex="1">
+    <caption label="&stats.cap;"/>
+    <description>&left.before; <label id="num-left"/> &left.after;</description>
+
+    <html:style>
+      treechildren::-moz-tree-checkbox(checked){
+        list-style-image: url("chrome://global/skin/checkbox/cbox-check.gif");
+      }
+    </html:style>
+    <tree id="addons-tree" flex="1">
+      <treecols>
+        <treecol label="&addons.good;"    type="checkbox"/>
+        <treecol label="&addons.enabled;" type="checkbox"/>
+        <treecol label="&addons.name;"    flex="1"/>
+      </treecols>
+
+      <treechildren id="addons" />
+    </tree>
+    <splitter collapse="before" resizeafter="grow"/>
+  </groupbox>
+</window>
