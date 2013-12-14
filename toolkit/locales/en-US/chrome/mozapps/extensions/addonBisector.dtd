@@ -1,0 +1,23 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<!ENTITY blurb          "This is a tool to help you find misbehaving addons.  It works by testing different addon configurations to see if the problem occurs.">
+<!ENTITY noongoing.cap  "No Ongoing Bisection">
+<!ENTITY noongoing.desc "There is currently no bisection in progress.  Press start to begin.">
+<!ENTITY start.label    "Start">
+<!ENTITY ongoing.cap    "Ongoing Bisection">
+<!ENTITY ongoing.desc   "Please check to see if the problem is occuring and select the appropriate button.">
+<!ENTITY markgood.label "The problem is not occuring.">
+<!ENTITY markbad.label  "The problem is occuring.">
+<!ENTITY stats.cap      "Current Status">
+<!ENTITY left.before    "There are">
+<!ENTITY left.after     "possible addons left.">
+<!ENTITY addons.good    "Status">
+<!ENTITY addons.enabled "Enabled">
+<!ENTITY addons.name    "Addon Name">
+<!ENTITY next.cap       "Next Iteration.">
+<!ENTITY next.label     "Start next iteration.">
+<!ENTITY done.cap       "Finished">
+<!ENTITY done.desc      "Bisection finished and the problematic addon has been found!">
+<!ENTITY done.label     "Reboot to restore previous state.">

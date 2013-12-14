@@ -12,6 +12,8 @@ toolkit.jar:
   content/mozapps/extensions/extensions-content.js              (content/extensions-content.js)
   content/mozapps/extensions/about.xul                          (content/about.xul)
   content/mozapps/extensions/about.js                           (content/about.js)
+  content/mozapps/extensions/addonBisector.xul                  (content/addonBisector.xul)
+  content/mozapps/extensions/addonBisector.js                  (content/addonBisector.js)
   content/mozapps/extensions/list.xul                           (content/list.xul)
   content/mozapps/extensions/list.js                            (content/list.js)
   content/mozapps/extensions/blocklist.xul                      (content/blocklist.xul)
