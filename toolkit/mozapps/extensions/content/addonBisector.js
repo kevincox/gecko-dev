@@ -45,12 +45,12 @@ function updateStats() {
 
   document.getElementById("stats").hidden = false;
 
-  document.getElementById("num-left").value = AddonBisector.unknown.length;
+  document.getElementById("num-left").value = AddonBisector.unknownAddons.length;
 
-  AddonManager.getAddonsByIDs(AddonBisector.unknown, function(as){
+  AddonManager.getAddonsByIDs(AddonBisector.unknownAddons, function(as){
     addAddonItems(as, false);
   });
-  AddonManager.getAddonsByIDs(AddonBisector.good, function(as){
+  AddonManager.getAddonsByIDs(AddonBisector.goodAddons, function(as){
     addAddonItems(as, true);
   });
 }
@@ -58,7 +58,7 @@ function updateStats() {
 function init() {
   al = document.getElementById("addons");
 
-  if (AddonBisector.ongoing) {
+  if (AddonBisector.state != AddonBisector.STATE_NONE) {
     document.getElementById("ongoing").hidden = false;
     updateStats();
   } else {
@@ -82,12 +82,12 @@ function callback(c) {
   document.getElementById("ongoing"  ).hidden = true;
   document.getElementById("noongoing").hidden = true;
 
-  if (AddonBisector.done) {
+  if (AddonBisector.state == AddonBisector.STATE_DONE) {
     document.getElementById("stats").hidden = true;
     document.getElementById("done").hidden = false;
 
-    if (AddonBisector.bad) {
-      AddonManager.getAddonByID(AddonBisector.bad, function(a) {
+    if (AddonBisector.badAddons.length) {
+      AddonManager.getAddonByID(AddonBisector.badAddons[0], function(a) {
         document.getElementById("bad-icon").setAttribute("src", a.iconURL);
         document.getElementById("bad-name").value = a.name;
       });
