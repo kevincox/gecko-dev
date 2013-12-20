@@ -60,6 +60,7 @@ function init() {
 
   if (AddonBisector.state != AddonBisector.STATE_NONE) {
     document.getElementById("ongoing").hidden = false;
+    document.getElementById("abort").hidden = false;
     updateStats();
   } else {
     document.getElementById("noongoing").hidden = false;
@@ -74,6 +75,10 @@ function mark(allegiance) {
   AddonBisector.mark(callback, allegiance);
 }
 
+function abort() {
+  AddonBisector.abort();
+}
+
 var cont = function(){alert("This shouldn't appear.")};
 
 function callback(c) {
@@ -84,6 +89,7 @@ function callback(c) {
 
   if (AddonBisector.state == AddonBisector.STATE_DONE) {
     document.getElementById("stats").hidden = true;
+    document.getElementById("abort").hidden = true;
     document.getElementById("done").hidden = false;
 
     if (AddonBisector.badAddons.length) {
