@@ -63,6 +63,9 @@
 
       <treechildren id="addons" />
     </tree>
-    <splitter collapse="before" resizeafter="grow"/>
+  </groupbox>
+
+  <groupbox id="abort" hidden="true">
+    <button label="&abort.label;" oncommand="abort()"/>
   </groupbox>
 </window>

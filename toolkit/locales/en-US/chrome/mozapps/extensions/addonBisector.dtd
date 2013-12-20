@@ -21,3 +21,4 @@
 <!ENTITY done.cap       "Finished">
 <!ENTITY done.desc      "Bisection finished and the problematic addon has been found!">
 <!ENTITY done.label     "Reboot to restore previous state.">
+<!ENTITY abort.label    "Stop bisection and restore previous state.">

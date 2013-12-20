@@ -36,6 +36,15 @@ function restart() {
   Services.startup.quit(Ss.eAttemptQuit|Ss.eRestart);
 }
 
+function safeCall(where, cb, ...args) {
+  try {
+    return cb.apply(undefined, args);
+  } catch (e) {
+    Cu.reportError("Error calling callback for AddonBisector."+where+"().");
+    Cu.reportError(e);
+  }
+}
+
 ///// Persistence.
 
 const STORAGE_PREF = "toolkit.addonbisector.state";
@@ -222,7 +231,7 @@ const AddonBisector = {
         });
       });
 
-      cb(next);
+      safeCall("start", cb, next);
     });
   },
 
@@ -253,7 +262,7 @@ const AddonBisector = {
 
     // Even though we don't currently make any async calls we may wish
     // to in the future.
-    setTimeout(function(){ cb(next) }, 0); // Call it next tick.
+    setTimeout(safeCall.bind("mark", cb, next), 0); // Call it next tick.
   },
 
   /**
@@ -291,6 +300,6 @@ const AddonBisector = {
   dumpDebugInfo: function AB_dumpDebugInfo() {
     dj(state, true);
   },
-}
+};
 
-Object.freeze(AddonManager)
+Object.freeze(AddonManager);
