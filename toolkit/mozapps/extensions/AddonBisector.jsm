@@ -49,21 +49,8 @@ function safeCall(where, cb, ...args) {
 
 const STORAGE_PREF = "toolkit.addonbisector.state";
 
-let state = function(){
-  try {
-    let raw = Services.prefs.getCharPref(STORAGE_PREF);
-    let d = JSON.parse(raw);
-
-    // Make dates actually `Date`s.
-    ["startdate","updatedate"].forEach(function(p){
-      if (d[p]) d[p] = new Date(d[p]);
-    });
-
-    return d;
-  } catch (_) {
-    return undefined;
-  }
-}();
+let initialized = false;
+let state = undefined;
 
 // Flush state to persistent storage.
 function flush() {
@@ -79,6 +66,10 @@ function toIDList(as) {
   return as.map(function(a){return a.id});
 }
 
+function checkInitialized() {
+  if (!initialized) throw Error("AddonBisector is not initalized.  Please call `init()` first.");
+}
+
 /**
  * Set the state of addons.
  * 
@@ -89,9 +80,9 @@ function toIDList(as) {
  *         A function to call once all the addons are enabled/disabled.
  */
 function setAddonsState(map, cb) {
-  AddonManager.getAddonsByIDs(Object.keys(map), function(ads){
-    for (let i in ads) {
-      let a = ads[i];
+  AddonManager.getAddonsByIDs(Object.keys(map), function(addons){
+    for (let i in addons) {
+      let a = addons[i];
 
       a.userDisabled = !map[a.id]; // Map is true for enabled.
     }
@@ -111,7 +102,7 @@ function next() {
     }
   } else if (state.u.length <= 1) { // Finished.
     state.g.concat(state.u).forEach(function(a){
-      emap[a.id] = a.orig;
+      emap[a.id] = a.origEnabled;
     });
 
     state = null;
@@ -194,6 +185,44 @@ const AddonBisector = {
   },
 
   /**
+   * Initialize the module.
+   *
+   * Note: This must be called before using this module.
+   *
+   * @param  cb
+   *         A callback to be called with no arguments when AddonBisector has
+   *         initialized.
+   */
+  init: function AB_init(cb) {
+    var safecb = safeCall.bind(undefined, "init", cb);
+
+    if (initialized) { // Already initialized.
+      safecb();
+      return;
+    }
+
+    // Perform the initialization.
+    try {
+      let raw = Services.prefs.getCharPref(STORAGE_PREF);
+      let d = JSON.parse(raw);
+
+      // Make dates actually `Date`s.
+      ["startdate","updatedate"].forEach(function(p){
+        if (d[p]) d[p] = new Date(d[p]);
+      });
+
+      state = d;
+    } catch (_) {
+      state = undefined;
+    }
+    initialized = true;
+
+    // This init() isn't actually async but in the future it likely will be.
+    // call callback later so that people don't depend on it being synchronous.
+    setTimeout(safecb, 0);
+  },
+
+  /**
    * Start a Bisection.
    *
    * @param  cb
@@ -207,6 +236,7 @@ const AddonBisector = {
    *              disabled addons will not be tested.
    */
   start: function AB_start(cb, o) {
+    checkInitialized();
     if (typeof cb !=  "function") throw TypeError("Callback must be a function.");
     if (typeof o  == "undefined") o = {};
     o.all = !!o.all;
@@ -227,7 +257,7 @@ const AddonBisector = {
         state.u.push({
           id: a.id,
           enabled: false,
-          orig: !a.userDisabled,
+          origEnabled: !a.userDisabled,
         });
       });
 
@@ -246,6 +276,7 @@ const AddonBisector = {
    *         A boolean value representing if the current state is considered "good".
    */
   mark: function AB_mark(cb, good) {
+    checkInitialized();
     if (!state) throw new Error("Can't call mark() if not STATE_RUNNING.");
     if (typeof cb != "function") throw new TypeError("Callback must be a function.");
     good = !!good;
@@ -262,7 +293,7 @@ const AddonBisector = {
 
     // Even though we don't currently make any async calls we may wish
     // to in the future.
-    setTimeout(safeCall.bind("mark", cb, next), 0); // Call it next tick.
+    setTimeout(safeCall.bind(undefined, "mark", cb, next), 0); // Call it next tick.
   },
 
   /**
@@ -276,6 +307,7 @@ const AddonBisector = {
    *         If provided the browser also won't be restarted.
    */
   abort: function AB_abort(discard) {
+    checkInitialized();
     if (!state) {
       if (!discard) restart(); // We promise to restart.
       return;
@@ -287,7 +319,7 @@ const AddonBisector = {
 
       for (let i in all) {
         let a = all[i];
-        emap[a.id] = a.orig;
+        emap[a.id] = a.origEnabled;
       }
 
       setAddonsState(emap, restart);

@@ -47,7 +47,6 @@
 
   <groupbox id="stats" hidden="true" flex="1">
     <caption label="&stats.cap;"/>
-    <description>&left.before; <label id="num-left"/> &left.after;</description>
 
     <html:style>
       treechildren::-moz-tree-checkbox(checked){
