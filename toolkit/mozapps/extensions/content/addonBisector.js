@@ -12,7 +12,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/AddonManager.jsm");
 Cu.import("resource://gre/modules/AddonBisector.jsm");
 
-let al;
+let addonStatsTree;
 function addAddonItem(addon, good) {
   let ti = document.createElement("treeitem");
   let tr = document.createElement("treerow");
@@ -31,7 +31,7 @@ function addAddonItem(addon, good) {
   tc.setAttribute("label", addon.name);
 
   ti.appendChild(tr);
-  al.appendChild(ti);
+  addonStatsTree.appendChild(ti);
 }
 
 function addAddonItems(addons, good) {
@@ -40,12 +40,15 @@ function addAddonItems(addons, good) {
   }
 }
 
+function clearAddonItems() {
+  while (addonStatsTree.childNodes.length)
+    addonStatsTree.removeChild(al.childNodes[0]); // Clear list.
+}
+
 function updateStats() {
-  while (al.childNodes.length) al.removeChild(al.childNodes[0]); // Clear list.
+  clearAddonItems();
 
   document.getElementById("stats").hidden = false;
-
-  document.getElementById("num-left").value = AddonBisector.unknownAddons.length;
 
   AddonManager.getAddonsByIDs(AddonBisector.unknownAddons, function(as){
     addAddonItems(as, false);
@@ -55,16 +58,19 @@ function updateStats() {
   });
 }
 
+// Entry point on window open.
 function init() {
-  al = document.getElementById("addons");
+  AddonBisector.init(function(){
+    addonStatsTree = document.getElementById("addons");
 
-  if (AddonBisector.state != AddonBisector.STATE_NONE) {
-    document.getElementById("ongoing").hidden = false;
-    document.getElementById("abort").hidden = false;
-    updateStats();
-  } else {
-    document.getElementById("noongoing").hidden = false;
-  }
+    if (AddonBisector.state != AddonBisector.STATE_NONE) {
+      document.getElementById("ongoing").hidden = false;
+      document.getElementById("abort").hidden = false;
+      updateStats();
+    } else {
+      document.getElementById("noongoing").hidden = false;
+    }
+  });
 }
 
 function start() {
@@ -79,6 +85,8 @@ function abort() {
   AddonBisector.abort();
 }
 
+// Callback for restarting browser.
+// Will come from AddonBisector as a parameter to a callback.
 var cont = function(){alert("This shouldn't appear.")};
 
 function callback(c) {
@@ -88,6 +96,8 @@ function callback(c) {
   document.getElementById("noongoing").hidden = true;
 
   if (AddonBisector.state == AddonBisector.STATE_DONE) {
+    // The bad addon has been found!  Hide the progress things and reveal the
+    // faulty addon.
     document.getElementById("stats").hidden = true;
     document.getElementById("abort").hidden = true;
     document.getElementById("done").hidden = false;
@@ -97,11 +107,11 @@ function callback(c) {
         document.getElementById("bad-icon").setAttribute("src", a.iconURL);
         document.getElementById("bad-name").value = a.name;
       });
-    } else {
+    } else { // If there are no addons at fault it is a Firefox issue.
       document.getElementById("bad-icon").setAttribute("src", "chrome://branding/content/icon64.png");
       document.getElementById("bad-name").value = Services.appinfo.name;
     }
-  } else {
+  } else { // Not done, show next button.
     document.getElementById("next").hidden = false;
     updateStats();
   }

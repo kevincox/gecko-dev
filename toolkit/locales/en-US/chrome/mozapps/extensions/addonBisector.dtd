@@ -11,8 +11,6 @@
 <!ENTITY markgood.label "The problem is not occuring.">
 <!ENTITY markbad.label  "The problem is occuring.">
 <!ENTITY stats.cap      "Current Status">
-<!ENTITY left.before    "There are">
-<!ENTITY left.after     "possible addons left.">
 <!ENTITY addons.good    "Status">
 <!ENTITY addons.enabled "Enabled">
 <!ENTITY addons.name    "Addon Name">
