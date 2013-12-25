@@ -17,7 +17,7 @@ Cu.import("resource://gre/modules/Timer.jsm");
 
 // Print a log message.
 function d(msg, important) {
-  if (!important) return; // Comment for debugging.
+  //if (!important) return; // Comment for debugging.
 
   let fm = "AddonBisector: " + msg;
   Services.console.logStringMessage(fm);
@@ -95,17 +95,17 @@ function setAddonsState(map, cb) {
 function next() {
   let emap = {}; // New addon states.
 
-  if (state.runs == 0) { // First run.
-    for (let i in state.u) {
-      let a = state.u[i];
-      emap[a.id] = a.enabled = false; // Disable all.
-    }
-  } else if (state.u.length <= 1) { // Finished.
+  if (state.found) {
     state.g.concat(state.u).forEach(function(a){
       emap[a.id] = a.origEnabled;
     });
 
     state = null;
+  } else if (state.runs == 0) { // First run.
+    for (let i in state.u) {
+      let a = state.u[i];
+      emap[a.id] = a.enabled = false; // Disable all.
+    }
   } else {
     let n = state.u.length;
     for (let i in state.u) {
@@ -120,7 +120,6 @@ function next() {
     }
   }
 
-  if (state) state.runs++;
   flush();
 
   setAddonsState(emap, restart);
@@ -141,9 +140,9 @@ const AddonBisector = {
    * If a bisection is currently in progress.
    */
   get state(){
-    if (!state)                  return AddonBisector.STATE_NONE;
-    else if (state.u.length > 1) return AddonBisector.STATE_RUNNING;
-    else                         return AddonBisector.STATE_DONE;
+    if (!state)           return AddonBisector.STATE_NONE;
+    else if (state.found) return AddonBisector.STATE_DONE;
+    else                  return AddonBisector.STATE_RUNNING;
   },
 
   /**
@@ -162,8 +161,8 @@ const AddonBisector = {
    *         addon was found to be bad (firefox problem).
    */
   get badAddons() {
-    if (!state) return [];
-    else        return toIDList(state.u);
+    if (state && state.found) return toIDList(state.u);
+    else                      return undefined;
   },
 
   /**
@@ -243,10 +242,10 @@ const AddonBisector = {
 
     state = {
       startdate: new Date(),
-      runs: 0, // The current run number.
-      u: [],   // Unknown addons.
-      g: [],   // Good addons.
-      h: [],   // Log/History.
+      found: false, // If the bad addon has been found.
+      runs: 0,      // The current run number.
+      u: [],        // Unknown addons.
+      g: [],        // Good addons.
     };
 
     AddonManager.getAllAddons(function(aos){
@@ -260,6 +259,8 @@ const AddonBisector = {
           origEnabled: !a.userDisabled,
         });
       });
+
+      if (state.u.length == 0) state.found = true; // You have no addons silly!
 
       safeCall("start", cb, next);
     });
@@ -290,6 +291,9 @@ const AddonBisector = {
         state.g.push(a);
       }
     }
+
+    state.runs++;
+    if (state.u.length <= 1) state.found = true;
 
     // Even though we don't currently make any async calls we may wish
     // to in the future.
