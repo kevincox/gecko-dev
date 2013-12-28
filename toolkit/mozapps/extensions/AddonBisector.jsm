@@ -42,6 +42,10 @@ function safeCall(where, cb, ...args) {
   } catch (e) {
     Cu.reportError("Error calling callback for AddonBisector."+where+"().");
     Cu.reportError(e);
+
+    dump("Error calling callback for AddonBisector."+where+"().\n");
+    dump(e); dump("\n");
+    dump(e.stack);
   }
 }
 
@@ -72,7 +76,7 @@ function checkInitialized() {
 
 /**
  * Set the state of addons.
- * 
+ *
  * @param  map
  *         An object where the keys are the addon IDs and the values are truthy
  *         to enable or falsey to disable.
@@ -100,7 +104,7 @@ function next() {
       emap[a.id] = a.origEnabled;
     });
 
-    state = null;
+    state = undefined;
   } else if (state.runs == 0) { // First run.
     for (let i in state.u) {
       let a = state.u[i];
@@ -180,7 +184,7 @@ const AddonBisector = {
    * @return An Array of id strings.
    */
   get unknownAddons(){
-    return state && toIDList(state.u);
+    return state && (state.found?[]:toIDList(state.u));
   },
 
   /**
@@ -329,7 +333,7 @@ const AddonBisector = {
       setAddonsState(emap, restart);
     }
 
-    state = null;
+    state = undefined;
     flush();
   },
 
