@@ -152,7 +152,8 @@ const AddonBisector = {
   /**
    * The number of iterations.
    *
-   * @return The number of iterations this bisection has performed.
+   * @return The number of iterations this bisection has performed.  undefined
+   *         if not running or done.
    */
   get runs() {
     return state && state.runs;
@@ -161,8 +162,9 @@ const AddonBisector = {
   /**
    * The bad addon.
    *
-   * @return undefined if not done, otherwise the bad addon or undefined if no
-   *         addon was found to be bad (firefox problem).
+   * @return undefined if not done, otherwise an Array of bad addons.  Note that
+   *         this array may be empty which would indicate a problem with firefox
+   *         (or another issue unrelated to the installed addons).
    */
   get badAddons() {
     if (state && state.found) return toIDList(state.u);
@@ -172,7 +174,7 @@ const AddonBisector = {
   /**
    * The list of known good addons.
    *
-   * @return An Array of id strings.
+   * @return An Array of id strings.  undefined if not running or done.
    */
   get goodAddons(){
     return state && toIDList(state.g);
@@ -181,7 +183,7 @@ const AddonBisector = {
   /**
    * A list of addons with unknown allegiance.
    *
-   * @return An Array of id strings.
+   * @return An Array of id strings.  undefined if not running or done.
    */
   get unknownAddons(){
     return state && (state.found?[]:toIDList(state.u));
@@ -228,6 +230,9 @@ const AddonBisector = {
   /**
    * Start a Bisection.
    *
+   * Note: AddonBisector.init() must be called before this function, else an
+   *       error will be thrown.
+   *
    * @param  cb
    *         A callback to be called when initialization is done.  It will be
    *         passed a callback to call and a stats object.  The callback should
@@ -273,6 +278,9 @@ const AddonBisector = {
   /**
    * Mark the current state as good or bad.
    *
+   * Note: AddonBisector.init() must be called before this function, else an
+   *       error will be thrown.
+   *
    * @param  cb
    *         A callback that will be called with a continuation function and a
    *         stats object.  The continuation function should be called to do the
@@ -309,6 +317,9 @@ const AddonBisector = {
    *
    * This removes any old state.  Unless discard is set the state of the browser
    * is reset to how it was before the bisection started.
+   *
+   * Note: AddonBisector.init() must be called before this function, else an
+   *       error will be thrown.
    *
    * @param  discard
    *         If provided and true, don't attempt to restore the original state.
