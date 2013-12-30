@@ -258,10 +258,47 @@ function make_and_run_test(num, target, bad, disabled, opt) {
   });
 }
 
-// Entry point, start async test list.
+let synctests = [];
+
+// Entry point.  Runs sync tests then starts async test list.
 function run_test() {
+  while (synctests.length) synctests.pop()();
+
   run_next_test();
 }
+
+// Test uninitialized functionality.
+synctests.push(function testUninitialized(){
+  try {
+    AddonBisector.start(function(){
+      do_throw("AddonBisector.start() callback called before AddonBisector initialized.");
+    });
+    do_throw("AddonBisector.start() didn't throw before initialized.");
+  } catch (e) {
+    // Success.
+    do_check_true(true);
+  }
+
+  try {
+    AddonBisector.mark(function(){
+      do_throw("AddonBisector.mark() callback called before AddonBisector initialized.");
+    }, true);
+    do_throw("AddonBisector.mark() didn't throw before initialized.");
+  } catch (e) {
+    // Success.
+    do_check_true(true);
+  }
+
+  try {
+    AddonBisector.mark(function(){
+      do_throw("AddonBisector.mark() callback called before AddonBisector initialized.");
+    }, false);
+    do_throw("AddonBisector.mark() didn't throw before initialized.");
+  } catch (e) {
+    // Success.
+    do_check_true(true);
+  }
+});
 
 // Basic tests, find the bad addon.
 make_and_run_test(0, undefined);
