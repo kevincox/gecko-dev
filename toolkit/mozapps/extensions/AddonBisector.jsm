@@ -17,7 +17,7 @@ Cu.import("resource://gre/modules/Timer.jsm");
 
 // Print a log message.
 function d(msg, important) {
-  //if (!important) return; // Comment for debugging.
+  if (!important) return; // Comment for debugging.
 
   let fm = "AddonBisector: " + msg;
   Services.console.logStringMessage(fm);
@@ -60,8 +60,12 @@ let state = undefined;
 function flush() {
   const p = Services.prefs
 
-  if (!state) p.clearUserPref(STORAGE_PREF);
-  else        p.setCharPref(STORAGE_PREF, JSON.stringify(state));
+  if (!state)
+    p.clearUserPref(STORAGE_PREF);
+  else {
+    state.updatedate = new Date();
+    p.setCharPref(STORAGE_PREF, JSON.stringify(state));
+  }
 }
 
 ///// Related Utility Functions.
@@ -71,7 +75,9 @@ function toIDList(as) {
 }
 
 function checkInitialized() {
-  if (!initialized) throw Error("AddonBisector is not initalized.  Please call `init()` first.");
+  if (!initialized)
+    throw Components.Exception("AddonBisector is not initialized",
+                               Cr.NS_ERROR_NOT_INITIALIZED);
 }
 
 /**
@@ -111,11 +117,11 @@ function next() {
       emap[a.id] = a.enabled = false; // Disable all.
     }
   } else {
-    let n = state.u.length;
+    let pivot = state.u.length/2;
     for (let i in state.u) {
       let a = state.u[i];
 
-      emap[a.id] = a.enabled = (i < n/2);
+      emap[a.id] = a.enabled = (i < pivot);
     }
     for (let i in state.g) { // We want none of the good ones.
       let a = state.g[i];
@@ -144,9 +150,12 @@ const AddonBisector = {
    * If a bisection is currently in progress.
    */
   get state(){
-    if (!state)           return AddonBisector.STATE_NONE;
-    else if (state.found) return AddonBisector.STATE_DONE;
-    else                  return AddonBisector.STATE_RUNNING;
+    if (!state)
+      return AddonBisector.STATE_NONE;
+    else if (state.found)
+      return AddonBisector.STATE_DONE;
+    else
+      return AddonBisector.STATE_RUNNING;
   },
 
   /**
@@ -167,8 +176,10 @@ const AddonBisector = {
    *         (or another issue unrelated to the installed addons).
    */
   get badAddons() {
-    if (state && state.found) return toIDList(state.u);
-    else                      return undefined;
+    if (state && state.found)
+      return toIDList(state.u);
+    else
+      return undefined;
   },
 
   /**
@@ -192,6 +203,8 @@ const AddonBisector = {
   /**
    * Initialize the module.
    *
+   * Initializes AddonBisector if uninitialized then calls the callback.
+   *
    * Note: This must be called before using this module.
    *
    * @param  cb
@@ -199,6 +212,10 @@ const AddonBisector = {
    *         initialized.
    */
   init: function AB_init(cb) {
+    if (typeof cb !=  "function")
+      throw Components.Exception("Callback must be a function",
+                                 Cr.NS_ERROR_INVALID_ARG);
+
     var safecb = safeCall.bind(undefined, "init", cb);
 
     if (initialized) { // Already initialized.
@@ -212,8 +229,12 @@ const AddonBisector = {
       let d = JSON.parse(raw);
 
       // Make dates actually `Date`s.
-      ["startdate","updatedate"].forEach(function(p){
-        if (d[p]) d[p] = new Date(d[p]);
+      [
+        "startdate",
+        "updatedate"
+      ].forEach(function(p){
+        if (d[p])
+          d[p] = new Date(d[p]);
       });
 
       state = d;
@@ -245,8 +266,13 @@ const AddonBisector = {
    */
   start: function AB_start(cb, o) {
     checkInitialized();
-    if (typeof cb !=  "function") throw TypeError("Callback must be a function.");
-    if (typeof o  == "undefined") o = {};
+
+    if (typeof cb != "function")
+      throw Components.Exception("Callback must be a function",
+                                 Cr.NS_ERROR_INVALID_ARG);
+
+    if (typeof o == "undefined")
+      o = {};
     o.all = !!o.all;
 
     state = {
@@ -259,8 +285,10 @@ const AddonBisector = {
 
     AddonManager.getAllAddons(function(aos){
       aos.forEach(function(a){
-        if (o.all ? a.appDisabled : !a.isActive) return; // Skip disabled.
-        if (a.type != "extension") return;
+        if (o.all ? a.appDisabled : !a.isActive)
+          return; // Skip disabled.
+        if (a.type != "extension")
+          return;
 
         state.u.push({
           id: a.id,
@@ -269,7 +297,8 @@ const AddonBisector = {
         });
       });
 
-      if (state.u.length == 0) state.found = true; // You have no addons silly!
+      if (state.u.length == 0) // You have no addons silly!
+        state.found = true;
 
       safeCall("start", cb, next);
     });
@@ -290,8 +319,13 @@ const AddonBisector = {
    */
   mark: function AB_mark(cb, good) {
     checkInitialized();
-    if (!state) throw new Error("Can't call mark() if not STATE_RUNNING.");
-    if (typeof cb != "function") throw new TypeError("Callback must be a function.");
+    if (!state)
+      throw new Error("Can't call mark() if not STATE_RUNNING");
+
+    if (typeof cb != "function")
+      throw Components.Exception("Callback must be a function",
+                                 Cr.NS_ERROR_INVALID_ARG);
+
     good = !!good;
 
     for (let i = state.u.length; i--; ) {
@@ -305,7 +339,8 @@ const AddonBisector = {
     }
 
     state.runs++;
-    if (state.u.length <= 1) state.found = true;
+    if (state.u.length <= 1)
+      state.found = true;
 
     // Even though we don't currently make any async calls we may wish
     // to in the future.
