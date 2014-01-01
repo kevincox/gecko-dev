@@ -67,18 +67,21 @@ function installUpTo(num, cb) {
   if (num < installedAddons)
     do_throw("You can only install new addons, removing is not supported!");
 
+  function installSucceeded(install, addon) {
+    pending++;
+
+    if (pending == num)
+      cb();
+  }
+
   function installFailed(install) {
     do_throw("Error installing addons, could not test!");
   }
 
   let installListener = {
-    onInstallEnded: function(install, addon){
-      pending++;
-
-      if (pending == num) cb();
-    },
+    onInstallEnded:    installSucceeded,
     onInstallCanceled: installFailed,
-    onInstallFailed: installFailed,
+    onInstallFailed:   installFailed,
   };
 
   while (installedAddons < num) {
@@ -91,7 +94,8 @@ function installUpTo(num, cb) {
     });
   }
 
-  if (pending == num) cb(); // If none were installed.
+  if (pending == num)
+    cb(); // If none were installed.
 }
 
 let driverstate = {};
@@ -117,11 +121,16 @@ let driverstate = {};
  *         AddonBisector.start().
  */
 function runBisectionTest(cb, num, target, bad, disabled, opt) {
-  if (typeof disabled != "object") disabled = [];
+  if (typeof disabled != "object")
+    disabled = [];
 
   driverstate.callback = cb;
-  if (opt && opt.all) driverstate.numAddons = num;
-  else                driverstate.numAddons = num - disabled.length;
+
+  if (opt && opt.all)
+    driverstate.numAddons = num;
+  else
+    driverstate.numAddons = num - disabled.length;
+
   driverstate.target = target && addonID(target); // ID or undefined.
   driverstate.badAddons = bad && bad.map(addonID);
 
@@ -131,14 +140,17 @@ function runBisectionTest(cb, num, target, bad, disabled, opt) {
   driverstate.goodAddons = []; // Good Addons
   driverstate.allAddons = [];  // All enabled addons.
   for (let i = 1; i <= num; i++) {
-    if ((!opt || !opt.all) && disabled.indexOf(i) >= 0) continue; // Skip disabled addons.
+    if ((!opt || !opt.all) && disabled.indexOf(i) >= 0)
+      continue; // Skip disabled addons.
 
     let id = addonID(i);
 
     driverstate.allAddons.push(id); // Enabled, so add.
 
-    if (bad && bad.indexOf(i) >= 0) driverstate.badAddonRes.push(id); // Bad.
-    else                            driverstate.goodAddons.push(id);  // Otherwise good.
+    if (bad && bad.indexOf(i) >= 0) // Bad.
+      driverstate.badAddonRes.push(id);
+    else                            // Otherwise good.
+      driverstate.goodAddons.push(id);
   }
 
   do_print("Starting bisection of "+driverstate.numAddons+" addons ("+num+" installed).");
@@ -157,7 +169,10 @@ function runBisectionTest(cb, num, target, bad, disabled, opt) {
       });
 
       AddonBisector.init(function(){
+        // No bisection should be running.
         do_check_seq(AddonBisector.state, AddonBisector.STATE_NONE);
+
+        // When STATE_NONE these properties are unavailable.
         do_check_seq(AddonBisector.runs, undefined);
         do_check_seq(AddonBisector.badAddons, undefined);
         do_check_seq(AddonBisector.goodAddons, undefined);
@@ -222,12 +237,14 @@ function driver_mark() {
   do_check_seq(AddonBisector.badAddons, undefined);
   do_check_matches(driverstate.AllAddons, AddonBisector.goodAddons.concat(AddonBisector.unknownAddons).sort());
 
-  if (!driverstate.badAddons) AddonBisector.mark(driver_next, false);
+  if (!driverstate.badAddons)
+    AddonBisector.mark(driver_next, false);
   else {
     AddonManager.getAddonsByIDs(driverstate.badAddons, function(addons){
       var good = true;
       addons.forEach(function(addon){
-        if (addon.isActive) good = false;
+        if (addon.isActive)
+          good = false;
       });
       AddonBisector.mark(driver_next, good);
     });
@@ -236,7 +253,10 @@ function driver_mark() {
 
 // Called from last restart handler. Cleans up this test.
 function driver_done(){
+  // After the final reboot there should be no ongoing bisection.
   do_check_eq(AddonBisector.state, AddonBisector.STATE_NONE);
+
+  // And when STATE_NONE these properties are unavailable.
   do_check_seq(AddonBisector.runs, undefined);
   do_check_seq(AddonBisector.badAddons, undefined);
   do_check_seq(AddonBisector.goodAddons, undefined);
@@ -251,18 +271,18 @@ function driver_done(){
 
 // Create a test with the given options and cue it to run.
 function make_and_run_test(num, target, bad, disabled, opt) {
-  if (typeof bad != "object") bad = target?[target]:false;
+  if (typeof bad != "object")
+    bad = target ? [target] : false;
 
-  add_test(function(){
-    runBisectionTest(run_next_test, num, target, bad, disabled, opt);
-  });
+  add_test(runBisectionTest.bind(this, run_next_test, num, target, bad, disabled, opt));
 }
 
 let synctests = [];
 
 // Entry point.  Runs sync tests then starts async test list.
 function run_test() {
-  while (synctests.length) synctests.pop()();
+  while (synctests.length)
+    synctests.pop()();
 
   run_next_test();
 }
