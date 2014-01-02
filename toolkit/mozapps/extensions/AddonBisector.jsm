@@ -77,7 +77,8 @@ function toIDList(as) {
 function checkInitialized() {
   if (!initialized)
     throw Components.Exception("AddonBisector is not initialized",
-                               Cr.NS_ERROR_NOT_INITIALIZED);
+                               Cr.NS_ERROR_NOT_INITIALIZED,
+                               Components.stack.caller.caller);
 }
 
 /**
@@ -150,7 +151,9 @@ const AddonBisector = {
    * If a bisection is currently in progress.
    */
   get state(){
-    if (!state)
+    if (!initialized)
+      return undefined;
+    else if (!state)
       return AddonBisector.STATE_NONE;
     else if (state.found)
       return AddonBisector.STATE_DONE;
