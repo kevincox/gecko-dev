@@ -25,14 +25,16 @@ function todo_check_seq(left, right, stack) {
   do_check_seq(left, right, stack, true);
 }
 
-Components.utils.import("resource://gre/modules/AddonManager.jsm");
+const {classes:Cc, interfaces:Ci, results:Cr, utils:Cu} = Components;
+
+Cu.import("resource://gre/modules/AddonManager.jsm");
 
 // Set up AddonManager
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9");
 startupManager();
 
 // Import and grab the global context of AddonBisector.
-let abglobal = Components.utils.import("resource://gre/modules/AddonBisector.jsm");
+let abglobal = Cu.import("resource://gre/modules/AddonBisector.jsm");
 
 // Catch the restart.  We are using bootstrapped addons so it isn't necessary.
 let restartCallback;
@@ -289,6 +291,8 @@ function run_test() {
 
 // Test uninitialized functionality.
 synctests.push(function testUninitialized(){
+  do_check_seq(AddonBisector.state, undefined);
+
   try {
     AddonBisector.start(function(){
       do_throw("AddonBisector.start() callback called before AddonBisector initialized.");
@@ -296,7 +300,13 @@ synctests.push(function testUninitialized(){
     do_throw("AddonBisector.start() didn't throw before initialized.");
   } catch (e) {
     // Success.
-    do_check_true(true);
+    do_check_seq(typeof e, "object");
+    do_check_seq(e.result, Cr.NS_ERROR_NOT_INITIALIZED);
+    do_check_seq(e.location.name, Components.stack.name);
+    do_check_seq(e.location.filename, Components.stack.filename);
+
+    // Compare caller because the line and columns will be different.
+    do_check_seq(e.location.caller.toString(), Components.stack.caller.toString());
   }
 
   try {
@@ -306,7 +316,11 @@ synctests.push(function testUninitialized(){
     do_throw("AddonBisector.mark() didn't throw before initialized.");
   } catch (e) {
     // Success.
-    do_check_true(true);
+    do_check_seq(typeof e, "object");
+    do_check_seq(e.result, Cr.NS_ERROR_NOT_INITIALIZED);
+    do_check_seq(e.location.name, Components.stack.name);
+    do_check_seq(e.location.filename, Components.stack.filename);
+    do_check_seq(e.location.caller.toString(), Components.stack.caller.toString());
   }
 
   try {
@@ -316,7 +330,11 @@ synctests.push(function testUninitialized(){
     do_throw("AddonBisector.mark() didn't throw before initialized.");
   } catch (e) {
     // Success.
-    do_check_true(true);
+    do_check_seq(typeof e, "object");
+    do_check_seq(e.result, Cr.NS_ERROR_NOT_INITIALIZED);
+    do_check_seq(e.location.name, Components.stack.name);
+    do_check_seq(e.location.filename, Components.stack.filename);
+    do_check_seq(e.location.caller.toString(), Components.stack.caller.toString());
   }
 });
 
