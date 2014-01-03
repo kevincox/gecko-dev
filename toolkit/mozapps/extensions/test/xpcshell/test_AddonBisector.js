@@ -40,6 +40,8 @@ let abglobal = Cu.import("resource://gre/modules/AddonBisector.jsm");
 let restartCallback;
 abglobal.restart = function(){
   do_print("Rebooting");
+  abglobal.initialized = false; // Force read from persistent storage.
+
   restartCallback();
 };
 
@@ -186,7 +188,7 @@ function runBisectionTest(cb, num, target, bad, disabled, opt) {
   });
 };
 
-// Called after the first reboot.
+// Callback for AddonBisector.start().
 function driver_first(cont){
   if (driverstate.numAddons == 0) { // If you have no addons, blame firefox immediately.
     do_check_eq(AddonBisector.state, AddonBisector.STATE_DONE);
@@ -209,7 +211,7 @@ function driver_first(cont){
   cont();
 };
 
-// Called after reboots after the first.
+// Callback for AddonBisector.mark().
 function driver_next(cont){
   //AddonBisector.dumpDebugInfo();
 
@@ -235,40 +237,44 @@ function driver_next(cont){
 
 // Check good or bad and call AddonBisector.mark() appropriately.
 function driver_mark() {
-  do_check_eq(AddonBisector.state, AddonBisector.STATE_RUNNING);
-  do_check_seq(AddonBisector.badAddons, undefined);
-  do_check_matches(driverstate.AllAddons, AddonBisector.goodAddons.concat(AddonBisector.unknownAddons).sort());
+  AddonBisector.init(function(){
+    do_check_eq(AddonBisector.state, AddonBisector.STATE_RUNNING);
+    do_check_seq(AddonBisector.badAddons, undefined);
+    do_check_matches(driverstate.AllAddons, AddonBisector.goodAddons.concat(AddonBisector.unknownAddons).sort());
 
-  if (!driverstate.badAddons)
-    AddonBisector.mark(driver_next, false);
-  else {
-    AddonManager.getAddonsByIDs(driverstate.badAddons, function(addons){
-      var good = true;
-      addons.forEach(function(addon){
-        if (addon.isActive)
-          good = false;
+    if (!driverstate.badAddons)
+      AddonBisector.mark(driver_next, false);
+    else {
+      AddonManager.getAddonsByIDs(driverstate.badAddons, function(addons){
+        var good = true;
+        addons.forEach(function(addon){
+          if (addon.isActive)
+            good = false;
+        });
+        AddonBisector.mark(driver_next, good);
       });
-      AddonBisector.mark(driver_next, good);
-    });
-  }
+    }
+  });
 };
 
 // Called from last restart handler. Cleans up this test.
 function driver_done(){
-  // After the final reboot there should be no ongoing bisection.
-  do_check_eq(AddonBisector.state, AddonBisector.STATE_NONE);
+  AddonBisector.init(function(){
+    // After the final reboot there should be no ongoing bisection.
+    do_check_eq(AddonBisector.state, AddonBisector.STATE_NONE);
 
-  // And when STATE_NONE these properties are unavailable.
-  do_check_seq(AddonBisector.runs, undefined);
-  do_check_seq(AddonBisector.badAddons, undefined);
-  do_check_seq(AddonBisector.goodAddons, undefined);
-  do_check_seq(AddonBisector.unknownAddons, undefined);
+    // And when STATE_NONE these properties are unavailable.
+    do_check_seq(AddonBisector.runs, undefined);
+    do_check_seq(AddonBisector.badAddons, undefined);
+    do_check_seq(AddonBisector.goodAddons, undefined);
+    do_check_seq(AddonBisector.unknownAddons, undefined);
 
-  let cb = driverstate.callback;
-  driverstate = {};
+    let cb = driverstate.callback;
+    driverstate = {};
 
-  setRestartCallback();
-  cb();
+    setRestartCallback();
+    cb();
+  });
 };
 
 // Create a test with the given options and cue it to run.
@@ -290,7 +296,7 @@ function run_test() {
 }
 
 // Test uninitialized functionality.
-synctests.push(function testUninitialized(){
+function testUninitialized(){
   do_check_seq(AddonBisector.state, undefined);
 
   try {
@@ -336,7 +342,8 @@ synctests.push(function testUninitialized(){
     do_check_seq(e.location.filename, Components.stack.filename);
     do_check_seq(e.location.caller.toString(), Components.stack.caller.toString());
   }
-});
+}
+synctests.push(testUninitialized);
 
 // Basic tests, find the bad addon.
 make_and_run_test(0, undefined);
