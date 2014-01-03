@@ -17,7 +17,7 @@ Cu.import("resource://gre/modules/Timer.jsm");
 
 // Print a log message.
 function d(msg, important) {
-  if (!important) return; // Comment for debugging.
+  //if (!important) return; // Comment for debugging.
 
   let fm = "AddonBisector: " + msg;
   Services.console.logStringMessage(fm);
@@ -58,6 +58,8 @@ let state = undefined;
 
 // Flush state to persistent storage.
 function flush() {
+  d("flush()ing to disk.");
+
   const p = Services.prefs
 
   if (!state)
@@ -66,6 +68,8 @@ function flush() {
     state.updatedate = new Date();
     p.setCharPref(STORAGE_PREF, JSON.stringify(state));
   }
+
+  d("flush()ed.");
 }
 
 ///// Related Utility Functions.
@@ -219,12 +223,16 @@ const AddonBisector = {
       throw Components.Exception("Callback must be a function",
                                  Cr.NS_ERROR_INVALID_ARG);
 
-    var safecb = safeCall.bind(undefined, "init", cb);
+    let safecb = safeCall.bind(undefined, "init", cb);
+
+    d("init() called.");
 
     if (initialized) { // Already initialized.
       safecb();
       return;
     }
+
+    d("Actualy init()ing.");
 
     // Perform the initialization.
     try {
@@ -245,6 +253,7 @@ const AddonBisector = {
       state = undefined;
     }
     initialized = true;
+    d("init() finished.");
 
     // This init() isn't actually async but in the future it likely will be.
     // call callback later so that people don't depend on it being synchronous.
